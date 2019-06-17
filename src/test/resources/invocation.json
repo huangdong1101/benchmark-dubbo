@@ -1,0 +1,14 @@
+{
+  "service": "demoService",
+  "method": "sayHi",
+  "arguments": [
+    {
+      "type": "java.lang.String",
+      "value": "zhansan"
+    },
+    {
+      "type": "java.lang.String",
+      "value": "lisi"
+    }
+  ]
+}
