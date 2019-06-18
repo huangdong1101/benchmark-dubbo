@@ -7,7 +7,7 @@ import org.apache.dubbo.common.compiler.support.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-public class Invocation {
+public class Request {
 
     private final String service;
 
@@ -27,7 +27,7 @@ public class Invocation {
         return arguments;
     }
 
-    public Invocation(String service, String method, Argument... arguments) {
+    public Request(String service, String method, Argument... arguments) {
         if (StringUtils.isEmpty(service)) {
             throw new IllegalArgumentException("Empty service");
         }
@@ -39,7 +39,7 @@ public class Invocation {
         this.arguments = arguments;
     }
 
-    public static Invocation parse(String text) {
+    public static Request parse(String text) {
         JSONObject json = JSONObject.parseObject(text);
         String service = json.getString("service");
         if (StringUtils.isEmpty(service)) {
@@ -51,7 +51,7 @@ public class Invocation {
         }
         JSONArray argumentArr = json.getJSONArray("arguments");
         if (CollectionUtils.isEmpty(argumentArr)) {
-            return new Invocation(service, method);
+            return new Request(service, method);
         }
         Argument[] arguments = new Argument[argumentArr.size()];
         for (int i = 0; i < argumentArr.size(); i++) {
@@ -66,7 +66,7 @@ public class Invocation {
             }
             arguments[i] = new Argument(type, value);
         }
-        return new Invocation(service, method, arguments);
+        return new Request(service, method, arguments);
     }
 
     public static class Argument<T> {

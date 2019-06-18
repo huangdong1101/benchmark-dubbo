@@ -35,7 +35,7 @@ public class ThroughputExecutor<T extends Runnable> extends PressureExecutor<T> 
     }
 
     private static ThreadPoolExecutor newExecutor() {
-        return new ThreadPoolExecutor(0, Integer.MAX_VALUE, 30L, TimeUnit.SECONDS, new SynchronousQueue<>(), new CustomThreadFactory("executor", Thread.MAX_PRIORITY));
+        return new ThreadPoolExecutor(0, Integer.MAX_VALUE, 15L, TimeUnit.SECONDS, new SynchronousQueue<>(), new CustomThreadFactory("executor", Thread.MAX_PRIORITY));
     }
 
     @Override

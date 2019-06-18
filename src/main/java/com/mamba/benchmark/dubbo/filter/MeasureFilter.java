@@ -36,6 +36,7 @@ public class MeasureFilter extends ListenableFilter {
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         RpcContext.getContext().getAttachments().computeIfAbsent(KEY_TRACE_ID, TRACE_ID_GENERATOR);
         RpcContext.getContext().set(KEY_BEGIN_TIME, System.currentTimeMillis());
+        LOGGER.info("Invoke");
         return invoker.invoke(invocation);
     }
 

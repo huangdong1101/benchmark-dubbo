@@ -10,7 +10,7 @@ import com.mamba.benchmark.common.pressure.Fixed;
 import com.mamba.benchmark.common.pressure.Gradient;
 import com.mamba.benchmark.common.pressure.Pressure;
 import com.mamba.benchmark.dubbo.generator.InvariantTaskGenerator;
-import com.mamba.benchmark.dubbo.define.Invocation;
+import com.mamba.benchmark.dubbo.define.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -30,8 +30,8 @@ public class Main {
     @Parameter(names = {"-consumer"}, description = "Consumer context path", required = true)
     private File consumer;
 
-    @Parameter(names = {"-invocation"}, description = "Invocation config path", required = true)
-    private File invocation;
+    @Parameter(names = {"-req", "-request"}, description = "Request config path", required = true)
+    private File request;
 
     @Parameter(names = {"-t"}, description = "throughput")
     private boolean throughput;
@@ -97,9 +97,9 @@ public class Main {
     }
 
     private IntFunction<List<Runnable>> getGenerator(ApplicationContext context, boolean async) throws Exception {
-        String invocationText = Files.toString(this.invocation, Charsets.UTF_8);
-        Invocation invocation = Invocation.parse(invocationText);
-        return InvariantTaskGenerator.newInstance(context, invocation, async);
+        String requestStr = Files.toString(this.request, Charsets.UTF_8);
+        Request request = Request.parse(requestStr);
+        return InvariantTaskGenerator.newInstance(context, request, async);
     }
 
     private Pressure getPressure() {

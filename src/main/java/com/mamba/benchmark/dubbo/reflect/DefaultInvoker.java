@@ -18,7 +18,6 @@ class DefaultInvoker extends Invoker {
 
     @Override
     public CompletableFuture<?> invoke(Object... args) {
-        System.out.println(111111);
         return RpcContext.getContext().asyncCall(() -> this.method.invoke(this.service, args));
     }
 }

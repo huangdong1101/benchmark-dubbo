@@ -1,6 +1,6 @@
 package com.mamba.benchmark.dubbo.generator;
 
-import com.mamba.benchmark.dubbo.define.Invocation;
+import com.mamba.benchmark.dubbo.define.Request;
 import com.mamba.benchmark.dubbo.reflect.Invoker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,17 +43,17 @@ public class InvariantTaskGenerator implements IntFunction<List<Runnable>> {
         }
     }
 
-    public static InvariantTaskGenerator newInstance(ApplicationContext context, Invocation meta, boolean async) throws Exception {
-        String service = meta.getService();
-        String method = meta.getMethod();
-        Invocation.Argument[] arguments = meta.getArguments();
+    public static InvariantTaskGenerator newInstance(ApplicationContext context, Request request, boolean async) throws Exception {
+        String service = request.getService();
+        String method = request.getMethod();
+        Request.Argument[] arguments = request.getArguments();
         if (arguments == null || arguments.length == 0) {
             return new InvariantTaskGenerator(Invoker.getInvoker(context, service, method), async);
         }
         Object[] argumentValues = new String[arguments.length];
         Class<?>[] argumentTypes = new Class<?>[arguments.length];
         for (int i = 0; i < arguments.length; i++) {
-            Invocation.Argument argument = arguments[i];
+            Request.Argument argument = arguments[i];
             argumentTypes[i] = argument.getType();
             argumentValues[i] = argument.getValue();
         }
