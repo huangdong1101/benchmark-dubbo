@@ -1,23 +1,15 @@
 package com.mamba.benchmark.dubbo.reflect;
 
-import org.apache.dubbo.rpc.RpcContext;
-
 import java.lang.reflect.Method;
-import java.util.concurrent.CompletableFuture;
 
-class DefaultInvoker extends Invoker {
+class DefaultInvoker<T> extends Invoker<T> {
 
-    private final Object service;
-
-    private final Method method;
-
-    public DefaultInvoker(Object service, Method method) {
-        this.service = service;
-        this.method = method;
+    public DefaultInvoker(T service, Method method) {
+        super(service, method);
     }
 
     @Override
-    public CompletableFuture<?> invoke(Object... args) {
-        return RpcContext.getContext().asyncCall(() -> this.method.invoke(this.service, args));
+    public Object invoke(Object... args) throws Exception {
+        return this.getMethod().invoke(this.getService(), args);
     }
 }

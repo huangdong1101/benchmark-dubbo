@@ -71,10 +71,10 @@ public class ThroughputExecutor<T extends Runnable> extends PressureExecutor<T> 
      */
     private void generate() {
         int num = this.getLimit();
-//        LOGGER.info("ThreadPool Stat: executor(core={},maximum={},workers={},queue={},active={},completed={}), preparer(core={},maximum={},workers={},queue={},active={},completed={}), Limit={}",
-//                this.executor.getCorePoolSize(), this.executor.getMaximumPoolSize(), this.executor.getPoolSize(), this.executor.getQueue().size(), this.executor.getActiveCount(), this.executor.getCompletedTaskCount(),
-//                this.preparer.getCorePoolSize(), this.preparer.getMaximumPoolSize(), this.executor.getPoolSize(), this.preparer.getQueue().size(), this.preparer.getActiveCount(), this.preparer.getCompletedTaskCount(),
-//                num);
+        LOGGER.info("ThreadPool Stat: executor(core={},maximum={},workers={},queue={},active={},completed={}), preparer(core={},maximum={},workers={},queue={},active={},completed={}), Limit={}",
+                this.executor.getCorePoolSize(), this.executor.getMaximumPoolSize(), this.executor.getPoolSize(), this.executor.getQueue().size(), this.executor.getActiveCount(), this.executor.getCompletedTaskCount(),
+                this.preparer.getCorePoolSize(), this.preparer.getMaximumPoolSize(), this.executor.getPoolSize(), this.preparer.getQueue().size(), this.preparer.getActiveCount(), this.preparer.getCompletedTaskCount(),
+                num);
         if (num <= 0) {
             return;
         }

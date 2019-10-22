@@ -7,13 +7,14 @@
                            http://dubbo.apache.org/schema/dubbo
                            http://dubbo.apache.org/schema/dubbo/dubbo.xsd">
 
-    <!--<dubbo:consumer filter="com.mamba.benchmark.dubbo.filter.MonitorFilter"/>-->
-
     <dubbo:application name="pubbo" />
 
     <dubbo:registry address="zookeeper://0.0.0.0:2181" />
 
-    <dubbo:reference id="demoService" check="false" interface="com.mamba.benchmark.dubbo.sample.face.GreetingsService" />
-    <!--<dubbo:reference id="demoService" check="false" interface="com.mamba.benchmark.dubbo.sample.face.GreetingsService" async="true" />-->
-    <!--<dubbo:reference id="demoService" check="false" interface="com.mamba.benchmark.dubbo.sample.face.GreetingsService" generic="true" />-->
+    <dubbo:reference id="demoService" check="false" interface="com.mamba.benchmark.dubbo.sample.face.GreetingsService" generic="false" />
+
+    <dubbo:reference id="demoService1" check="false" interface="com.mamba.benchmark.dubbo.sample.face.GreetingsService" generic="true"/>
+
+    <dubbo:reference id="demoService2" check="false" interface="com.mamba.benchmark.dubbo.sample.face.GreetingsService" generic="true" async="true" />
+
 </beans>

@@ -1,22 +1,18 @@
 package com.mamba.benchmark.dubbo;
 
+import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 import com.mamba.benchmark.common.executor.PressureExecutor;
-import com.mamba.benchmark.common.pressure.Custom;
-import com.mamba.benchmark.common.pressure.Fixed;
-import com.mamba.benchmark.common.pressure.Gradient;
 import com.mamba.benchmark.common.pressure.Pressure;
+import com.mamba.benchmark.dubbo.conf.RequestConf;
 import com.mamba.benchmark.dubbo.generator.InvariantTaskGenerator;
-import com.mamba.benchmark.dubbo.define.Request;
+import com.mamba.benchmark.dubbo.reflect.Invoker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericXmlApplicationContext;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.util.CollectionUtils;
 
 import java.io.File;
 import java.util.List;
@@ -27,41 +23,20 @@ public class Main {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-    @Parameter(names = {"-consumer"}, description = "Consumer context path", required = true)
+    @Parameter(names = {"-c"}, description = "concurrency")
+    private String concurrency;
+
+    @Parameter(names = {"-q"}, description = "throughput")
+    private String throughput;
+
+    @Parameter(names = {"-t"}, description = "timelimit", required = true)
+    private int timelimit;
+
+    @Parameter(names = {"-consumer", "--consumer"}, description = "Consumer context", required = true)
     private File consumer;
 
-    @Parameter(names = {"-req", "-request"}, description = "Request config path", required = true)
-    private File request;
-
-    @Parameter(names = {"-t"}, description = "throughput")
-    private boolean throughput;
-
-    @Parameter(names = {"-c"}, description = "concurrency")
-    private boolean concurrency;
-
-    @Parameter(names = {"-quantity"})
-    private Integer quantity;
-
-    @Parameter(names = {"-duration"})
-    private Integer duration;
-
-    @Parameter(names = {"-rampup", "-ramp-up"})
-    private Integer rampup;
-
-    @Parameter(names = {"-initialQuantity", "-initial-quantity"})
-    private Integer initialQuantity;
-
-    @Parameter(names = {"-finalQuantity", "-final-quantity"})
-    private Integer finalQuantity;
-
-    @Parameter(names = {"-incrementPerStep", "-increment-per-step"})
-    private Integer incrementPerStep;
-
-    @Parameter(names = {"-durationPerStep", "-duration-per-step"})
-    private Integer durationPerStep;
-
-    @Parameter(names = {"-quantities"})
-    private List<String> quantities;
+    @Parameter(description = "Request config", required = true, converter = RequestConfConverter.class)
+    private RequestConf request;
 
     public void run() throws Exception {
         GenericXmlApplicationContext context = new GenericXmlApplicationContext(new FileSystemResource(this.consumer));
@@ -80,48 +55,53 @@ public class Main {
             LOGGER.info("PressureExecutor will stop in 10 second!");
             TimeUnit.SECONDS.sleep(10);
         }
+        LOGGER.info("Thrift Benchmark Completed!");
     }
 
     private PressureExecutor<Runnable> getExecutor(ApplicationContext context) throws Exception {
-        if (this.concurrency == this.throughput) {
-            throw new IllegalArgumentException("Invalid argument: concurrency=" + this.concurrency + ", throughput=" + throughput);
+        if (this.timelimit < 10) {
+            throw new IllegalArgumentException("Invalid argument: timelimit=" + this.timelimit);
         }
-        boolean concurrency = this.concurrency;
-        Pressure pressure = this.getPressure();
-        IntFunction<List<Runnable>> generator = this.getGenerator(context, this.throughput);
-        if (concurrency) {
-            return PressureExecutor.concurrency(generator, pressure::currentQuantity);
-        } else {
+        if (this.concurrency == null) {
+            if (this.throughput == null) {
+                throw new IllegalArgumentException("Invalid argument: concurrency is null, throughput is null");
+            }
+            Pressure pressure = Pressure.parse(this.throughput, this.timelimit);
+            IntFunction<List<Runnable>> generator = this.getGenerator(context, true);
             return PressureExecutor.throughput(generator, pressure::currentQuantity);
+        } else {
+            if (this.throughput != null) {
+                throw new IllegalArgumentException("Invalid argument: concurrency=" + this.concurrency + ", throughput=" + throughput);
+            }
+            Pressure pressure = Pressure.parse(this.concurrency, this.timelimit);
+            IntFunction<List<Runnable>> generator = this.getGenerator(context, false);
+            return PressureExecutor.concurrency(generator, pressure::currentQuantity);
         }
     }
 
     private IntFunction<List<Runnable>> getGenerator(ApplicationContext context, boolean async) throws Exception {
-        String requestStr = Files.toString(this.request, Charsets.UTF_8);
-        Request request = Request.parse(requestStr);
-        return InvariantTaskGenerator.newInstance(context, request, async);
-    }
-
-    private Pressure getPressure() {
-        if (this.quantity != null && this.duration != null) {
-            if (this.rampup == null) {
-                return new Fixed(this.quantity, this.duration);
-            } else {
-                return new Fixed(this.quantity, this.duration, this.rampup);
-            }
-        }
-        if (this.initialQuantity != null && this.finalQuantity != null && this.incrementPerStep != null && this.durationPerStep != null) {
-            return new Gradient(this.initialQuantity, this.finalQuantity, this.incrementPerStep, this.durationPerStep);
-        }
-        if (!CollectionUtils.isEmpty(this.quantities) && this.durationPerStep != null) {
-            return new Custom(this.quantities.stream().mapToInt(Integer::parseInt).toArray(), this.durationPerStep);
-        }
-        throw new IllegalArgumentException("Invalid argument for init pressure");
+        Invoker invoker = Invoker.getInvoker(context, this.request.getService(), this.request.getMethod(), this.request.getParameterTypes());
+        return new InvariantTaskGenerator(invoker, async, this.request.getArguments());
     }
 
     public static void main(String... args) throws Exception {
         Main main = new Main();
         JCommander.newBuilder().addObject(main).build().parse(args);
         main.run();
+    }
+
+    private static class RequestConfConverter implements IStringConverter<RequestConf> {
+        @Override
+        public RequestConf convert(String s) {
+            try {
+                return new RequestConf(s);
+            } catch (Exception e) {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                } else {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
     }
 }

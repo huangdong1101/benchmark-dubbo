@@ -1,27 +1,26 @@
 package com.mamba.benchmark.dubbo.reflect;
 
-import org.apache.dubbo.rpc.RpcContext;
+import org.apache.dubbo.rpc.service.GenericException;
 import org.apache.dubbo.rpc.service.GenericService;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
 
-class GenericInvoker extends Invoker {
-
-    private final GenericService service;
-
-    private final String method;
+class GenericInvoker extends Invoker<GenericService> {
 
     private final String[] parameterTypes;
 
-    public GenericInvoker(GenericService service, String method, Class<?>... parameterTypes) {
-        this.service = service;
-        this.method = method;
-        this.parameterTypes = (parameterTypes == null || parameterTypes.length == 0) ? new String[0] : Arrays.stream(parameterTypes).map(Class::getName).toArray(String[]::new);
+    public GenericInvoker(GenericService service, Method method) {
+        super(service, method);
+        if (method.getParameterCount() == 0) {
+            this.parameterTypes = null;
+        } else {
+            this.parameterTypes = Arrays.stream(method.getParameterTypes()).map(Class::getName).toArray(String[]::new);
+        }
     }
 
     @Override
-    public CompletableFuture<?> invoke(Object... args) {
-        return RpcContext.getContext().asyncCall(() -> this.service.$invoke(this.method, this.parameterTypes, args));
+    public Object invoke(Object... args) throws GenericException {
+        return this.getService().$invoke(this.getMethod().getName(), this.parameterTypes, args);
     }
 }

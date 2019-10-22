@@ -1,90 +1,77 @@
 package com.mamba.benchmark.common.util;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.util.TypeUtils;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-public class ClassParser<T> {
+public class ClassParser {
 
-    private Class<T> type;
-
-    private Function<String, T> mapper;
-
-    private ClassParser(Class<T> type, Function<String, T> mapper) {
-        this.type = type;
-        this.mapper = mapper;
-    }
-
-    public Class<T> getType() {
-        return type;
-    }
-
-    public T parse(String s) {
-        return this.mapper.apply(s);
-    }
-
-    public static <T> T parse(Class<T> type, String s) {
-        ClassParser parser = COMMON_PARSERS.get(type.getName());
-        if (parser == null) {
-            return JSON.parseObject(s, type);
-        } else {
-            return (T) parser.parse(s);
+    public static Object[] castArgs(Method method, String... args) {
+        int parameterCount = method.getParameterCount();
+        if (method.getParameterCount() == 0) {
+            if (args == null || args.length == 0) {
+                return new Object[0];
+            }
+            throw new IllegalArgumentException("Invalid args. expect parameter count: 0, actual args size: " + args.length);
         }
+        if (args == null) {
+            throw new IllegalArgumentException("Null args. expect parameter count: " + parameterCount);
+        }
+        if (args.length != parameterCount) {
+            throw new IllegalArgumentException("Invalid args. expect parameter count: " + parameterCount + ", actual args size: " + args.length);
+        }
+        Object[] arguments = new Object[parameterCount];
+        Type[] parameterTypes = method.getGenericParameterTypes();
+        for (int i = 0; i < parameterCount; i++) {
+            arguments[i] = cast(args[i], parameterTypes[i]);
+        }
+        return arguments;
     }
 
-    private static final ClassParser[] BASIC_TYPES = {
-            new ClassParser(byte.class, (Function<String, Byte>) Byte::parseByte),
-            new ClassParser(short.class, (Function<String, Short>) Short::parseShort),
-            new ClassParser(int.class, (Function<String, Integer>) Integer::parseInt),
-            new ClassParser(long.class, (Function<String, Long>) Long::parseLong),
-            new ClassParser(float.class, (Function<String, Float>) Float::parseFloat),
-            new ClassParser(double.class, (Function<String, Double>) Double::parseDouble),
-            new ClassParser(char.class, (Function<String, Character>) ClassParser::parseChar),
-            new ClassParser(boolean.class, (Function<String, Boolean>) Boolean::parseBoolean)
-    };
-
-    private static final ClassParser[] COMMON_TYPES = {
-            new ClassParser(Byte.class, (Function<String, Byte>) Byte::valueOf),
-            new ClassParser(Short.class, (Function<String, Short>) Short::valueOf),
-            new ClassParser(Integer.class, (Function<String, Integer>) Integer::valueOf),
-            new ClassParser(Long.class, (Function<String, Long>) Long::valueOf),
-            new ClassParser(Float.class, (Function<String, Float>) Float::valueOf),
-            new ClassParser(Double.class, (Function<String, Double>) Double::valueOf),
-            new ClassParser(Character.class, (Function<String, Character>) ClassParser::toCharacter),
-            new ClassParser(Boolean.class, (Function<String, Boolean>) Boolean::valueOf),
-            new ClassParser(String.class, Function.identity()),
-    };
-
-    private static final Map<String, ClassParser> COMMON_PARSERS = new HashMap<>();
-
-    static {
-        for (ClassParser parser : BASIC_TYPES) {
-            COMMON_PARSERS.put(parser.getType().getName(), parser);
-        }
-        for (ClassParser parser : COMMON_TYPES) {
-            COMMON_PARSERS.put(parser.getType().getName(), parser);
-        }
-    }
-
-    private static char parseChar(String s) {
-        if (s == null || s.isEmpty()) {
-            throw new NullPointerException("Empty char!");
-        }
-        if (s.length() > 1) {
-            throw new IllegalArgumentException("Invalid char: '" + s + "'");
-        }
-        return s.charAt(0);
-    }
-
-    private static Character toCharacter(String s) {
-        if (s == null || s.isEmpty()) {
+    public static <T> T cast(Object obj, Type type) {
+        if (obj == null) {
             return null;
         }
-        if (s.length() > 1) {
-            throw new IllegalArgumentException("Invalid char: '" + s + "'");
+        if (type == String.class) {
+            return (T) obj.toString();
         }
-        return s.charAt(0);
+        if (type == byte.class || type == Byte.class) {
+            return (T) TypeUtils.castToByte(obj);
+        }
+        if (type == short.class || type == Short.class) {
+            return (T) TypeUtils.castToShort(obj);
+        }
+        if (type == int.class || type == Integer.class) {
+            return (T) TypeUtils.castToInt(obj);
+        }
+        if (type == long.class || type == Long.class) {
+            return (T) TypeUtils.castToLong(obj);
+        }
+        if (type == float.class || type == Float.class) {
+            return (T) TypeUtils.castToFloat(obj);
+        }
+        if (type == double.class || type == Double.class) {
+            return (T) TypeUtils.castToDouble(obj);
+        }
+        if (type == char.class || type == Character.class) {
+            return (T) TypeUtils.castToChar(obj);
+        }
+        if (type == boolean.class || type == Boolean.class) {
+            return (T) TypeUtils.castToBoolean(obj);
+        }
+        if (type == BigDecimal.class) {
+            return (T) TypeUtils.castToBigDecimal(obj);
+        }
+        if (type == BigInteger.class) {
+            return (T) TypeUtils.castToBigInteger(obj);
+        }
+        return JSON.parseObject(obj.toString(), type);
     }
 }
