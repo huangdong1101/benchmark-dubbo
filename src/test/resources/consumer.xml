@@ -9,7 +9,7 @@
 
     <dubbo:application name="pubbo" />
 
-    <dubbo:registry address="zookeeper://0.0.0.0:2181" />
+    <dubbo:registry address="multicast://224.0.0.0:2181" />
 
     <dubbo:reference id="demoService" check="false" interface="com.mamba.benchmark.dubbo.sample.face.GreetingsService" generic="false" />
 
